@@ -162,7 +162,7 @@ int main() {
     }
 
     // Create an OpenGL window
-    SDL_Window* window = SDL_CreateWindow("slippymap3d", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 1024, 768, SDL_WINDOW_SHOWN | SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE);
+    SDL_Window* window = SDL_CreateWindow("slippymap3d", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 1024, 1024, SDL_WINDOW_SHOWN | SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE);
     if (!window) {
         std::cerr << "Could not create SDL window: " << SDL_GetError() << std::endl;
         SDL_Quit();
@@ -175,12 +175,13 @@ int main() {
     clock_gettime(CLOCK_REALTIME, &spec);
     long base_time = spec.tv_sec * 1000 + round(spec.tv_nsec / 1.0e6);
     int frames = 0;
+    int pos = 0;
     while(true) {
         if (!poll()) {
             break;
         }
         frames++;
-
+        pos ++;
         clock_gettime(CLOCK_REALTIME, &spec);
         long time_in_mill = spec.tv_sec * 1000 + round(spec.tv_nsec / 1.0e6);
         if ((time_in_mill - base_time) > 1000.0) {
@@ -188,8 +189,8 @@ int main() {
             base_time = time_in_mill;
             frames=0;
         }
-
-        render(player_state.zoom, player_state.latitude, player_state.longitude);
+//        player_state.latitude += 0.00001;
+        render(player_state.zoom, player_state.latitude + cos(pos/100000.0), player_state.longitude + sin(pos/100000.0));
 
         SDL_GL_SwapWindow(window);
     }

@@ -7,11 +7,17 @@ Building
 slippymap3d uses CMake to compile the code. To build the program you need at
 least
 
+* CMake & make
 * C++11 capable compiler
 * SDL 2.x with SDL_image
 * CURL
 * OpenGL
 * boost filesystem, system and thread
+
+
+```
+sudo apt install -y libsdl2-dev libsdl2-image-dev libboost-dev libboost-system-dev libboost-filesystem-dev mlibboost-thread-dev
+```
 
 To compile the program you can either use the following commands
 

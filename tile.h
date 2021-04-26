@@ -28,7 +28,11 @@
 #include <string>
 #include <map>
 
+#if defined(__APPLE__)
+#include <OpenGL/gl.h>
+#else
 #include <GL/gl.h>
+#endif
 
 /**
  * @brief storage class for a tile

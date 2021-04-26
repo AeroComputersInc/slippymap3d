@@ -45,6 +45,8 @@ size_t write_data(void *ptr, size_t size, size_t nmemb, FILE *stream) {
 }
 
 Loader::Loader() {
+    std::cout << "Loader ..." << std::endl;
+
     work = new boost::asio::io_service::work(ioService);
     for (int i = 0; i < 5; i++) {
         pool.create_thread(boost::bind(&boost::asio::io_service::run, &ioService));
@@ -52,12 +54,15 @@ Loader::Loader() {
 }
 
 Loader::~Loader() {
+    std::cout << "Destroy Loader ..." << std::endl;
+
     ioService.stop();
     pool.join_all();
     delete work;
 }
 
 void Loader::download_image(Tile* tile) {
+    std::cout << "Download image CURL" << std::endl;
 
     CURL* curl = curl_easy_init();
     if (curl == nullptr) {
@@ -70,7 +75,11 @@ void Loader::download_image(Tile* tile) {
     std::string dir = dirname.str();
     boost::filesystem::create_directories(dir);
     std::string filename = tile->get_filename();
-    std::string url = "http://localhost/osm_tiles/" + filename;
+//     std::string url = "http://localhost/osm_tiles/" + filename;
+//    std::string url = "https://tiles.wmflabs.org/hillshading/" + filename;
+    std::string url = "https://tiles.wmflabs.org/osm-no-labels/" + filename;
+    std::cout << "Downloading texture from url " << url << std::endl;
+
     std::string file = TILE_DIR + filename;
     FILE* fp = fopen(file.c_str(), "wb");
     curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
@@ -80,34 +89,43 @@ void Loader::download_image(Tile* tile) {
     fclose(fp);
     curl_easy_cleanup(curl);
     if (res != CURLE_OK) {
-        std::cerr << "Failed to download: " << url << " " << res << std::endl;
+        std::cout << "Failed to download: " << url << " " << res << std::endl;
     } else {
+        std::cout << "CURL download success: " << res << std::endl;
         tile->texid = 0;
     }
+
 }
 
 void Loader::load_image(Tile& tile) {
+    std::cout << "Load image ..." << std::endl;
     std::string filename = TILE_DIR + tile.get_filename();
     if (!boost::filesystem::exists(filename)) {
+        std::cout << "Download image: " << filename << std::endl;
         ioService.post(boost::bind(&Loader::download_image, this, &tile));
         return;
+    } else {
+        std::cout << "image exist " << filename << " size: " << boost::filesystem::file_size(filename) << std::endl;
+        if (boost::filesystem::file_size(filename) < 15) {
+            std::cout << "Replace Empty Image: " << filename << std::endl;
+            boost::filesystem::remove(filename);
+            ioService.post(boost::bind(&Loader::download_image, this, &tile));
+            return;
+        } else {
+            std::cout << "File Cached: " << filename << std::endl;
+        }
     }
-    if (boost::filesystem::file_size(filename) == 0) {
-        boost::filesystem::remove(filename);
-        ioService.post(boost::bind(&Loader::download_image, this, &tile));
-        return;
-    }
-
     open_image(tile);
 }
 
 void Loader::open_image(Tile &tile) {
+    std::cout << "Open image ..." << std::endl;
     std::string filename = TILE_DIR + tile.get_filename();
     SDL_Surface *texture = IMG_Load(filename.c_str());
 
     char tmp[4096];
     getcwd(tmp, 4096);
-    std::cout << "Loading texture " << filename << " from directory " << tmp << ' ';
+    std::cout << "Loading texture " << filename << " from directory " << tmp << std::endl;
 
     if (texture) {
         if (SDL_MUSTLOCK(texture)) {
@@ -159,10 +177,10 @@ void Loader::open_image(Tile &tile) {
 
         tile.texid = texid;
 
-        std::cout << "SUCCESS" << std::endl;
+        std::cout << "Load Texture -> SUCCESS" << std::endl;
     } else {
         tile.texid = TileFactory::instance()->get_dummy();
-        std::cout << "FAILED" << std::endl;
+        std::cout << "Load Texture -> FAILED" << std::endl;
     }
 
 }
